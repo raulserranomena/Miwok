@@ -4,6 +4,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.media.MediaPlayer;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
@@ -14,6 +15,24 @@ import com.example.android.miwok.R;
 import java.util.ArrayList;
 
 public class NumbersActivity extends AppCompatActivity {
+
+    /**
+     * Handles playback of all the sound files
+     */
+    private MediaPlayer mMediaPlayer;
+
+    /**
+     * This listener gets triggered when the {@link MediaPlayer} has completed
+     * playing the audio file.
+     */
+    private MediaPlayer.OnCompletionListener mCompletionListener = new MediaPlayer.OnCompletionListener() {
+        @Override
+        public void onCompletion(MediaPlayer mediaPlayer) {
+            // Now that the sound file has finished playing, release the media player resources.
+            releaseMediaPlayer();
+        }
+    };
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,14 +69,46 @@ public class NumbersActivity extends AppCompatActivity {
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+
+                // Release the media player if it currently exists because we are about to
+                // play a different sound file
+                releaseMediaPlayer();
+
                 // Get the {@link Word} object at the given position the user clicked on
                 Word word = words.get(position);
+
                 // Create and setup the {@link MediaPlayer} for the audio resource associated
                 // with the current word
-                MediaPlayer mediaPlayer = MediaPlayer.create(NumbersActivity.this, word.getAudioResourceId());
+                mMediaPlayer = MediaPlayer.create(NumbersActivity.this, word.getAudioResourceId());
+
                 // Start the audio file
-                mediaPlayer.start(); // no need to call prepare(); create() does that for you
+                mMediaPlayer.start(); // no need to call prepare(); create() does that for you
+
+                // Setup a listener on the media player, so that we can stop and release the
+                // media player once the sound has finished playing.
+                mMediaPlayer.setOnCompletionListener(mCompletionListener);
+
             }
         });
     }
+
+    /**
+     * Clean up the media player by releasing its resources.
+     */
+    private void releaseMediaPlayer() {
+        // If the media player is not null, then it may be currently playing a sound.
+        if (mMediaPlayer != null) {
+            // Regardless of the current state of the media player, release its resources
+            // because we no longer need it.
+            mMediaPlayer.release();
+
+            // Set the media player back to null. For our code, we've decided that
+            // setting the media player to null is an easy way to tell that the media player
+            // is not configured to play an audio file at the moment.
+            mMediaPlayer = null;
+        }
+
+    }
+
+
 }
